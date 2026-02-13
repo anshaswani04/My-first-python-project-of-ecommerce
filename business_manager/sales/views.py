@@ -5,11 +5,18 @@ from django.views.decorators.http import require_POST
 from .models import Bill, Payment, Client, Profile
 from django.db.models import Sum, F
 from io import BytesIO
-from xhtml2pdf import pisa
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter, A4
 from django.template.loader import get_template
 from django.http import HttpResponse
 import requests
 from django.contrib import messages
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch, cm
+from reportlab.lib import colors
+from html.parser import HTMLParser
+import re
 
 
 def send_whatsapp_message(phone, message):
@@ -258,9 +265,60 @@ def client_statement_pdf(request, client_id):
         f'attachment; filename="{client.name}_statement.pdf"'
     )
 
-    pisa.CreatePDF(
-        src=BytesIO(html.encode('UTF-8')),
-        dest=response
+    # Create PDF using ReportLab
+    doc = SimpleDocTemplate(response, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # Title
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        textColor=colors.HexColor('#000000'),
+        spaceAfter=20,
     )
-
+    story.append(Paragraph(f"Statement for {client.name}", title_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Client Details
+    detail_style = styles['Normal']
+    story.append(Paragraph(f"<b>Client Name:</b> {client.name}", detail_style))
+    story.append(Paragraph(f"<b>Phone:</b> {client.phone}", detail_style))
+    story.append(Paragraph(f"<b>Email:</b> {client.email or 'N/A'}", detail_style))
+    if from_date or to_date:
+        date_range = f"{from_date or 'Start'} to {to_date or 'End'}"
+        story.append(Paragraph(f"<b>Period:</b> {date_range}", detail_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Bills Table
+    table_data = [['Bill No', 'Date', 'Amount', 'Paid', 'Pending']]
+    for bill in bills:
+        table_data.append([
+            str(bill.bill_number),
+            bill.bill_date.strftime('%d-%m-%Y'),
+            f"₹{bill.total_amount:.2f}",
+            f"₹{bill.paid_amount:.2f}",
+            f"₹{bill.pending_amount():.2f}",
+        ])
+    
+    # Add totals row
+    table_data.append(['TOTAL', '', f"₹{total_billed:.2f}", f"₹{total_paid:.2f}", f"₹{total_billed - total_paid:.2f}"])
+    
+    table = Table(table_data, colWidths=[1.2*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1.2*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4CAF50')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#E0E0E0')),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    story.append(table)
+    
+    # Build PDF
+    doc.build(story)
     return response
