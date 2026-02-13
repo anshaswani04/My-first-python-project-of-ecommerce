@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client summary</title>
+</head>
+<body>
+    <h1>Client-wise Outstanding Summary</h1>
+
+    <table border="1" cellpadding="8" cellspacing="0">
+        <tr>
+            <th>Client Name</th>
+            <th>Phone</th>
+            <th>Total Pending Amount</th>
+            <th>Action</th>
+        </tr>
+        {%for client in clients_summary%}
+        <tr>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{ client.client__name }}</th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{ client.client__phone }}</th>
+            <th>{{ client.total_pending| floatformat:2 }}</th>
+            <th><a href="{% url 'client_bills' client.client__id %}">
+                View Bills
+            </a></th>
+        </tr>
+        {% empty %}
+        <tr colspan="3">
+            <td>No Pending Amount</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+    <a href="{% url 'dashboard' %}"> back to dashboard</a>
+</body>
+</html>

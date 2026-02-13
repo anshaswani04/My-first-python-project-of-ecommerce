@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Collection Dashboard</title>
+</head>
+<body>
+    <hr>
+    <a href="/admin/"
+   style="
+       display: inline-block;
+       padding: 10px 16px;
+       background-color: #007bff;
+       color: white;
+       text-decoration: none;
+       border-radius: 5px;
+       font-weight: bold;
+   ">
+   📊 Admin
+</a>
+<a href="{% url 'client_summary' %}"
+   style="
+       display: inline-block;
+       padding: 10px 16px;
+       background-color: #007bff;
+       color: white;
+       text-decoration: none;
+       border-radius: 5px;
+       font-weight: bold;
+   ">
+   📊 Client-wise Outstanding Summary
+</a>
+<hr>
+<h1>Collection Dashboard</h1>
+<p><strong>Date:</strong> {{ today }}</p>
+
+<h2>Total Pending Amount: ₹{{ total_pending|floatformat:2 }}</h2>
+<hr>
+
+
+<h2>Upcoming Collections</h2>
+
+{% if future_bills %}
+<table border="1" cellpadding="8" cellspacing="0">
+    <tr>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Name</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Phone Number</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Bill Number</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Bill Due Date</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Overdue Days</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Partial Payments Paid</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Pending Amount</th>
+        <th style="padding:5px 10px;">Partial Bills Payment options</th>
+    </tr>
+    {% for bill in future_bills %}
+        <tr>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.client.name}} </th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">(📞 {{ bill.client.phone }}) </th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.bill_number}}</th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.due_date}}</th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.overdue_days}}</th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{% if bill.pending_amount > 0 and bill.paid_amount > 0 %}
+                <span style="color: orange;">🟡 Partial</span>
+        {% elif bill.pending_amount == 0 %}
+                <span style="color: green;">🟢 Paid</span>
+        {% endif %}
+        Paid: {{ bill.paid_amount|floatformat:2 }}
+    </th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.pending_amount|floatformat:2}} RS</th>
+            <th style="padding:5px 10px;">{% if bill.pending_amount > 0 %}
+                <form action="{% url 'mark_as_paid' bill.id %}" method="post" style="display:inline;">
+    {% csrf_token %}
+
+    <input type="number" name="paid_now" placeholder="Amount"
+           min="1" max="{{ bill.pending_amount }}" required>
+
+    <select name="payment_mode" required>
+        <option value="">Mode</option>
+        <option value="cash">Cash</option>
+        <option value="cheque">Cheque</option>
+    </select>
+
+    <input type="text" name="cheque_number"
+           placeholder="Cheque No (if any)">
+
+    <button type="submit"
+            onclick="return confirm('Confirm payment entry?');">
+        Submit
+    </button>
+</form>
+            {% else %}
+                <strong style="color: green;">✔ Paid</strong>
+            {% endif %}</th>
+        </tr>
+    {% endfor %}
+</table>
+{% else %}
+
+<p>No Upcomming collections</p>
+{% endif %}
+
+<hr>
+<h2>Today's Collections</h2>
+{% if todays_bills %}
+<table border="1" cellpadding="8" cellspacing="0">
+    <tr>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Name</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Phone Number</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Bill Number</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Bill Due Date</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Overdue Days</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Partial Payments Paid</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Pending Amount</th>
+        <th style="padding:5px 10px;">Partial Bills Payment options</th>
+    </tr>
+    {% for bill in todays_bills %}
+        <tr>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.client.name}} </th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">(📞 {{ bill.client.phone }}) </th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.bill_number}}</th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.due_date}}</th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.overdue_days}}</th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{% if bill.pending_amount > 0 and bill.paid_amount > 0 %}
+                <span style="color: orange;">🟡 Partial</span>
+        {% elif bill.pending_amount == 0 %}
+                <span style="color: green;">🟢 Paid</span>
+        {% endif %}
+        Paid: {{ bill.paid_amount|floatformat:2 }}
+    </th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.pending_amount|floatformat:2}} RS</th>
+            <th style="padding:5px 10px;">{% if bill.pending_amount > 0 %}
+                <form action="{% url 'mark_as_paid' bill.id %}" method="post" style="display:inline;">
+    {% csrf_token %}
+
+    <input type="number" name="paid_now" placeholder="Amount"
+           min="1" max="{{ bill.pending_amount }}" required>
+
+    <select name="payment_mode" required>
+        <option value="">Mode</option>
+        <option value="cash">Cash</option>
+        <option value="cheque">Cheque</option>
+    </select>
+
+    <input type="text" name="cheque_number"
+           placeholder="Cheque No (if any)">
+
+    <button type="submit"
+            onclick="return confirm('Confirm payment entry?');">
+        Submit
+    </button>
+</form>
+            {% else %}
+                <strong style="color: green;">✔ Paid</strong>
+            {% endif %}</th>
+        </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No collection Today</p>
+{% endif %}
+
+<hr>
+
+<h2>Overdue Bills</h2>
+{% if overdue_bills %}
+<table border="1" cellpadding="8" cellspacing="0">
+    <tr>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Name</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Phone Number</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Bill Number</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Bill Due Date</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Overdue Days</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Partial Payments Paid</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Pending Amount</th>
+        <th style="padding:5px 10px; border-right: 1px solid black;">Partial Bills Payment options</th>
+        <th style="padding:5px 10px;">Reminder button</th>
+    </tr>
+    {% for bill in overdue_bills %}
+        <tr>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.client.name}} </th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">(📞 {{ bill.client.phone }}) </th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.bill_number}}</th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.due_date}}</th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.overdue_days}}</th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{% if bill.pending_amount > 0 and bill.paid_amount > 0 %}
+                <span style="color: orange;">🟡 Partial</span>
+        {% elif bill.pending_amount == 0 %}
+                <span style="color: green;">🟢 Paid</span>
+        {% endif %}
+        Paid: {{ bill.paid_amount|floatformat:2 }}
+    </th>
+            <th style="padding:5px 10px; border-right: 1px solid black;">{{bill.pending_amount|floatformat:2}} RS</th>
+            <th style="padding:5px 10px;">{% if bill.pending_amount > 0 %}
+                <form action="{% url 'mark_as_paid' bill.id %}" method="post" style="display:inline;">
+    {% csrf_token %}
+
+    <input type="number" name="paid_now" placeholder="Amount"
+           min="1" max="{{ bill.pending_amount }}" required>
+
+    <select name="payment_mode" required>
+        <option value="">Mode</option>
+        <option value="cash">Cash</option>
+        <option value="cheque">Cheque</option>
+    </select>
+
+    <input type="text" name="cheque_number"
+           placeholder="Cheque No (if any)">
+
+    <button type="submit"
+            onclick="return confirm('Confirm payment entry?');">
+        Submit
+    </button>
+    
+</form>
+            {% else %}
+                <strong style="color: green;">✔ Paid</strong>
+            {% endif %}</th>
+             <th><form action="{% url 'send_reminder' bill.id %}" method="post">
+    {% csrf_token %}
+    <button type="submit">📲 Send WhatsApp Reminder</button>
+</form><!--<a target="_blank"
+   href="https://wa.me/91{{ bill.client.phone }}?text=
+   Hi%20{{ bill.client.name }}%2C%0A
+   Your%20Bill%20No%20{{ bill.bill_number }}%20of%20₹{{ bill.pending_amount|floatformat:2 }}%20is%20overdue%20by%20{{ bill.overdue_days }}%20days.%0A
+   Kindly%20arrange%20payment.%0A
+   Thank%20you%2C%20Suhagan%20Creation.">
+   📲 Send Reminder
+</a>--></th> 
+        </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No overdue bills 🎉</p>
+{% endif %}
+
+</body>
+</html>

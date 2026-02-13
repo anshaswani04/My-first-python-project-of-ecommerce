@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Bills</title>
+</head>
+<body>
+<h1>Bills for {{ client.name }}</h1>
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <tr>
+        <th>Bill No</th>
+        <th>Due Date</th>
+        <th>Total</th>
+        <th>Paid</th>
+        <th>Pending</th>
+        <th>Payment Details</th>
+        <th>Reminder Button</th>
+    </tr>
+
+    {% for bill in bills %}
+    <tr>
+        <td>{{ bill.bill_number }}</td>
+        <td>{{ bill.due_date }}</td>
+        <td>₹{{ bill.total_amount }}</td>
+        <td>₹{{ bill.paid_amount }}</td>
+        <td>₹{{ bill.pending_amount }}</td>
+        <td>
+            {% if bill.payments.all %}
+                <div>
+                    {% for payment in bill.payments.all %}
+                        <p>
+                            ₹{{ payment.amount }} |
+                            {{ payment.payment_mode|title }}
+                            {% if payment.payment_mode == 'cheque' %}
+                                (Cheque No: {{ payment.cheque_number }})
+                            {% endif %}
+                            | {{ payment.payment_date }}
+                        </p>
+                    {% endfor %}
+                    </div>
+            {% else %}
+                <em>No payments yet</em>
+            {% endif %}
+        </td>
+        <td><a target="_blank"
+   href="https://wa.me/91{{ bill.client.phone }}?text=
+   Hi%20{{ bill.client.name }}%2C%0A
+   Your%20Bill%20No%20{{ bill.bill_number }}%20of%20₹{{ bill.pending_amount|floatformat:2 }}%20is%20overdue%20by%20{{ bill.overdue_days }}%20days.%0A
+   Kindly%20arrange%20payment.%0A
+   Thank%20you.%0ASugan%20Creation.">
+   📲 Send Reminder
+</a></td>
+    </tr>
+    {% endfor %}
+</table>
+
+<br>
+
+<h2>over due bills</h2>
+
+
+
+<br>
+<a href="{% url 'client_summary' %}">⬅ Back to Client Summary</a>
+<br>
+<br>
+<a href="{% url 'client_statement' client.id %}"
+   style="
+        padding:8px 14px;
+        background:#198754;
+        color:white;
+        text-decoration:none;
+        border-radius:5px;
+        font-weight:bold;
+   ">
+    📄 View Statement
+</a>
+    
+</body>
+</html>

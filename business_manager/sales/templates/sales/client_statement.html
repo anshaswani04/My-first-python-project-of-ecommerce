@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Client Statement</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+        th {
+            background: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Client Statement</h1>
+
+<form method="get" style="margin-bottom:15px;">
+    <label>
+        From:
+        <input type="date" name="from" value="{{ from_date }}">
+    </label>
+
+    <label style="margin-left:10px;">
+        To:
+        <input type="date" name="to" value="{{ to_date }}">
+    </label>
+
+    <button type="submit"
+            style="
+                margin-left:10px;
+                padding:6px 12px;
+                background:#0d6efd;
+                color:white;
+                border:none;
+                border-radius:4px;
+            ">
+        Filter
+    </button>
+
+    <a href="{% url 'client_statement' client.id %}"
+       style="margin-left:10px;">
+        Reset
+    </a>
+</form>
+
+{% if from_date or to_date %}
+<p>
+    <strong>Period:</strong>
+    {{ from_date|default:"Start" }} → {{ to_date|default:"Today" }}
+</p>
+{% endif %}
+
+<h3>Client Details</h3>
+<p>
+    <strong>Name:</strong> {{ client.name }} <br>
+    <strong>Phone:</strong> {{ client.phone }} <br>
+    <strong>Address:</strong> {{ client.address }}
+</p>
+
+<hr>
+
+<h3>Summary</h3>
+<p>
+    <strong>Total Billed:</strong> ₹{{ total_billed }} <br>
+    <strong>Total Paid:</strong> ₹{{ total_paid }} <br>
+    <strong>Total Pending:</strong> ₹{{ total_pending }}
+</p>
+
+<hr>
+
+<h3>Bills & Payments</h3>
+
+<table>
+    <tr>
+        <th>Date</th>
+        <th>Bill No</th>
+        <th>Bill Amount</th>
+        <th>Payments</th>
+        <th>Paid</th>
+        <th>Pending</th>
+    </tr>
+
+    {% for bill in bills %}
+    <tr>
+        <td>{{ bill.bill_date }}</td>
+        <td>{{ bill.bill_number }}</td>
+        <td>₹{{ bill.total_amount }}</td>
+
+        <td>
+            {% if bill.payments.all %}
+                <div>
+                {% for payment in bill.payments.all %}
+                    <p>
+                        ₹{{ payment.amount }} |
+                        {{ payment.payment_mode|title }}
+                        {% if payment.payment_mode == 'cheque' %}
+                            (Cheque: {{ payment.cheque_number }})
+                        {% endif %}
+                        | {{ payment.payment_date }}
+                    </p>
+                {% endfor %}
+                </div>
+            {% else %}
+                No payments
+            {% endif %}
+        </td>
+
+        <td>₹{{ bill.paid_amount }}</td>
+        <td>₹{{ bill.pending_amount }}</td>
+    </tr>
+    {% endfor %}
+</table>
+<br>
+<br>
+<a href="{% url 'client_statement_pdf' client.id %} ?from={{ from_date }}&to={{ to_date }}"
+   style="
+        padding:8px 14px;
+        background:#dc3545;
+        color:white;
+        text-decoration:none;
+        border-radius:5px;
+        font-weight:bold;
+   ">
+    📄 Download PDF
+</a>
+<br>
+<br>
+
+<a href="{% url 'client_bills' client.id %}">⬅ Back to Client Bills</a>
+
+</body>
+</html>
