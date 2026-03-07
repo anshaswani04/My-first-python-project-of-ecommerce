@@ -215,17 +215,14 @@
             {% else %}
                 <strong style="color: green;">✔ Paid</strong>
             {% endif %}</th>
-             <th><form action="{% url 'send_reminder' bill.id %}" method="post">
-    {% csrf_token %}
-    <button type="submit">📲 Send WhatsApp Reminder</button>
-</form><!--<a target="_blank"
+             <th><a target="_blank"
    href="https://wa.me/91{{ bill.client.phone }}?text=
    Hi%20{{ bill.client.name }}%2C%0A
    Your%20Bill%20No%20{{ bill.bill_number }}%20of%20₹{{ bill.pending_amount|floatformat:2 }}%20is%20overdue%20by%20{{ bill.overdue_days }}%20days.%0A
    Kindly%20arrange%20payment.%0A
-   Thank%20you%2C%20Suhagan%20Creation.">
+   Thank%20you.%0ASugan%20Creation.">
    📲 Send Reminder
-</a>--></th> 
+</a></th> 
         </tr>
     {% endfor %}
 </table>
