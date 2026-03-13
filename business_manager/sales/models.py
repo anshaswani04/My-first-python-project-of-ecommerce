@@ -3,7 +3,13 @@ from django.utils import timezone
 from django.db.models import Sum
 from django.contrib.auth.models import User
 
+class Shop(models.Model):
+    name = models.CharField(max_length=200)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="shops")
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.name
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -13,15 +19,18 @@ class Profile(models.Model):
         return self.user.username
 
 class Client(models.Model):
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE, null=True, blank=True)
+
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
     address = models.TextField(blank=True)
 
     def __str__(self):
         return self.name
-
+    
 
 class Bill(models.Model):
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
     sales_person = models.ForeignKey(
         User,
@@ -75,7 +84,7 @@ class Payment(models.Model):
         ('cash', 'Cash'),
         ('cheque', 'Cheque'),
     ]
-
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
     bill = models.ForeignKey(Bill, on_delete=models.CASCADE, related_name='payments')
     amount = models.FloatField()
     payment_mode = models.CharField(max_length=15, choices=PAYMENT_CHOICES)

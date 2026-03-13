@@ -1,13 +1,36 @@
 from django.contrib import admin
 from datetime import date
-from .models import Client, Bill, Payment, Profile
+from .models import Shop, Client, Bill, Payment, Profile
 
+
+class ShopAdmin(admin.ModelAdmin):
+    list_display = ('name', 'owner', 'created_at')
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(owner=request.user)
+    
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.owner = request.user
+        super().save_model(request, obj, form, change)
+
+admin.site.register(Shop, ShopAdmin)
 admin.site.register(Profile)
 
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
     list_display = ('name', 'phone', 'address')
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(shop__owner=request.user)
+    
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "shop":
+            kwargs["queryset"] = Shop.objects.filter(owner=request.user)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class PaymentInline(admin.TabularInline):
@@ -30,8 +53,21 @@ class BillAdmin(admin.ModelAdmin):
 
     inlines = [PaymentInline]
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(shop__owner=request.user)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "shop":
+            kwargs["queryset"] = Shop.objects.filter(owner=request.user)
+
+        if db_field.name == "client":
+            kwargs["queryset"] = Client.objects.filter(shop__owner=request.user)
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
     def pending_amount_display(self, obj):
-        return obj.pending_amount
+        return obj.pending_amount()
 
     pending_amount_display.short_description = "Pending Amount"
 
